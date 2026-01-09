@@ -70,28 +70,18 @@ while run:
                     player.speed = [-speed, 0]
         if event.type == pygame.JOYBUTTONDOWN:
             player = players[ lookup[ event.instance_id ]]
-            if event.button == 3:
-                player.speed = [0, -speed]
-            if event.button == 2:
-                player.speed = [0, +speed]
-            if event.button == 0:
-                player.speed = [+speed, 0]
-            if event.button == 1:
-                player.speed = [-speed, 0]
             if event.button == 9:
                 run = False
         if event.type == pygame.JOYAXISMOTION:
             player = players[ lookup[ event.instance_id ]]
             if player.joystick.get_axis(0) < -deadzone:
-                player.speed = [0, -speed]
-            if player.joystick.get_axis(0) > deadzone:
                 player.speed = [0, +speed]
+            if player.joystick.get_axis(0) > deadzone:
+                player.speed = [0, -speed]
             if player.joystick.get_axis(1) < -deadzone:
                 player.speed = [-speed, 0]
             if player.joystick.get_axis(1) > deadzone:
                 player.speed = [+speed, 0]
-
-
 
     for player in players:
         player.position[0] += player.speed[0]
