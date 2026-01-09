@@ -17,6 +17,7 @@ pygame.joystick.init()
 black = 0, 0, 0
 
 speed = 1
+deadzone = 0.1
 
 info = pygame.display.Info()
 screen = pygame.display.set_mode((0,0), pygame.FULLSCREEN)
@@ -79,6 +80,17 @@ while run:
                 player.speed = [-speed, 0]
             if event.button == 9:
                 run = False
+        if event.type == pygame.JOYAXISMOTION:
+            player = players[ lookup[ event.instance_id ]]
+            if player.joystick.get_axis(0) < -deadzone:
+                player.speed = [0, -speed]
+            if player.joystick.get_axis(0) > deadzone:
+                player.speed = [0, +speed]
+            if player.joystick.get_axis(1) < -deadzone:
+                player.speed = [-speed, 0]
+            if player.joystick.get_axis(1) > deadzone:
+                player.speed = [+speed, 0]
+
 
 
     for player in players:
