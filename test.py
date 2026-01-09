@@ -52,6 +52,7 @@ if joysticks[1]:
 font_size = 30
 # pygame.joystick.init()
 # font = pygame.font.SysFont("Futura", font_size)
+font = None
 
 def draw_text(text, font, text_col, x, y):
      #img = font.render(text, True, text_col)
