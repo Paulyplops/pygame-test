@@ -8,14 +8,6 @@ class Keys(IntEnum):
     UP = 2
     DOWN = 3
 
-file = open("out.txt","w")
-
-def log( text ):
-    file.write( text + '\n' )
-    file.flush()
-
-log("Hello")
-
 pygame.init()
 
 pygame.mouse.set_visible(False) 
@@ -56,22 +48,10 @@ if joysticks[1]:
     lookup[ joysticks[1].get_instance_id() ] = 1
 
 
-font_size = 30
-# pygame.joystick.init()
-# font = pygame.font.SysFont("Futura", font_size)
-font = None
-
-def draw_text(text, font, text_col, x, y):
-     #img = font.render(text, True, text_col)
-    #screen.blit(img, (x, y))
-    log(text)
-
-
 
 run = True
 
 while run:
-    msg = ""
     for event in pygame.event.get():
         if event.type == pygame.QUIT: 
             run = False
@@ -89,15 +69,16 @@ while run:
                     player.speed = [-speed, 0]
         if event.type == pygame.JOYBUTTONDOWN:
             player = players[ lookup[ event.instance_id ]]
-            msg = str( event.instance_id ) + " " + str( event.button )
-            if event.button == 11:
+            if event.button == 3:
                 player.speed = [0, -speed]
-            if event.button == 12:
+            if event.button == 2:
                 player.speed = [0, +speed]
-            if event.button == 13:
+            if event.button == 0:
                 player.speed = [+speed, 0]
-            if event.button == 14:
+            if event.button == 1:
                 player.speed = [-speed, 0]
+            if event.button == 9:
+                run = False
 
 
     for player in players:
@@ -111,17 +92,8 @@ while run:
 
     screen.fill(black)
 
-    draw_text("Controllers: " + str(pygame.joystick.get_count()), font, pygame.Color("azure"), 10, 10)
-    draw_text("Button: " + msg, font, pygame.Color("azure"), 10, 35)
-    for joystick in joysticks:
-        if joystick:
-            draw_text("Controller Type: " + str(joystick.get_name()), font, pygame.Color("azure"), 10, 60)
-            draw_text("Number of axes: " + str(joystick.get_numaxes()), font, pygame.Color("azure"), 10, 85)
-
-
     for player in players:
         pygame.draw.rect( screen, player.col, pygame.Rect( player.position[0], player.position[1], 100, 100) )
     pygame.display.flip()
 
 
-file.close()
