@@ -8,6 +8,13 @@ class Keys(IntEnum):
     UP = 2
     DOWN = 3
 
+file = open("out.txt","w")
+
+def log( text ):
+    file.write( text + '\n' )
+    file.flush()
+
+log("Hello")
 
 pygame.init()
 
@@ -57,7 +64,7 @@ font = None
 def draw_text(text, font, text_col, x, y):
      #img = font.render(text, True, text_col)
     #screen.blit(img, (x, y))
-    print(text)
+    log(text)
 
 
 
@@ -115,3 +122,6 @@ while run:
     for player in players:
         pygame.draw.rect( screen, player.col, pygame.Rect( player.position[0], player.position[1], 100, 100) )
     pygame.display.flip()
+
+
+file.close()
