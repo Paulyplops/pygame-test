@@ -18,6 +18,17 @@ pygame.mouse.set_visible(False)
 pygame.joystick.init()
 
 
+font = pygame.image.load("reduction.bmp")
+font_size = 50
+
+def write( surface, x, y, text ):
+    for l in range(0,len(text)):
+        letter = text[l]
+        i = ord( letter ) - 32
+        a = i % 10 * font_size
+        b = i // 10 * font_size
+        surface.blit( font, (x+l*50, y), (a,b,50,50) )
+
 class Keys(IntEnum):
     """The order the keys are stored."""
     LEFT = 0
@@ -114,18 +125,28 @@ class TronGame():
     """ Our custom Tron Window."""
 
 
-    def __init__(self, fullscreen):
+    def __init__(self, fullscreen, rotate):
 
         """ Initializer """
 
         if fullscreen:
             info = pygame.display.Info()
             self.screen = pygame.display.set_mode((0,0), pygame.FULLSCREEN)
-            self.width, self.height = info.current_w, info.current_h
+            self.screen_width, self.screen_height = info.current_w, info.current_h
         else:
-            self.width, self.height = SCREEN_WIDTH, SCREEN_HEIGHT
+            self.screen_width, self.screen_height = SCREEN_WIDTH, SCREEN_HEIGHT
             self.screen = pygame.display.set_mode((SCREEN_WIDTH,SCREEN_HEIGHT))
 
+        if rotate:
+            self.width = self.screen_height
+            self.height = self.screen_width
+        else:
+            self.width = self.screen_width
+            self.height = self.screen_height
+
+        self.background = pygame.Surface( (self.screen_width, self.screen_height) )
+        self.background.fill(BLACK)
+        self.surface = pygame.Surface( (self.width, self.height), pygame.SRCALPHA)
 
         self.speed = self.height * 0.1
 
@@ -147,19 +168,23 @@ class TronGame():
 
         """ Draw everything """
 
-        self.screen.fill(BLACK)
+        self.surface.fill(BLACK)
 
         for player in self.players:
-            pygame.draw.lines( self.screen, player.col, False, player.path, WIDTH)
-            pygame.draw.rect( self.screen, player.col, pygame.Rect( player.pos[0]-2, player.pos[1]-2, 5, 5) )
+            pygame.draw.lines( self.surface, player.col, False, player.path, WIDTH)
+            pygame.draw.rect( self.surface, player.col, pygame.Rect( player.pos[0]-2, player.pos[1]-2, 5, 5) )
 
         for particle in self.particles:
 
             r = min( round( (particle.col.r + 100 * particle.heat ) * particle.heat ), 255 )
             g = min( round( (particle.col.b + 100 * particle.heat ) * particle.heat ), 255 )
             b = min( round( (particle.col.g + 100 * particle.heat ) * particle.heat ), 255 )
-            self.screen.set_at( (round(particle.pos[0]),round(particle.pos[1]) ), (r,g,b) )
+            self.surface.set_at( (round(particle.pos[0]),round(particle.pos[1]) ), (r,g,b) )
 
+        write( self.surface, 10, 10, "Words" )
+        
+        self.screen.blit( self.background, (0, 0))
+        self.screen.blit( pygame.transform.rotate( self.surface, 90 ), (0, 0))
         pygame.display.flip()
 
     def update(self, delta_time):
@@ -168,7 +193,7 @@ class TronGame():
 
         for player in self.players:
             if player.dead:
-                player.col.a = (100)
+                player.col.a = round( player.col.a * 0.99 )
                 continue
             player.pos = ( 
                 player.pos[0] + player.vel[0] * delta_time / 1000, 
@@ -190,7 +215,7 @@ class TronGame():
             particle.vel = ( 
                 particle.vel[0] * 0.99, 
                 particle.vel[1] * 0.99)
-            particle.heat *= 0.999;
+            particle.heat *= 0.99;
 
     def crash( self, player ):
         for i in range(0,10):
@@ -252,11 +277,11 @@ class TronGame():
 
 
 
-def main( fullscreen ):
+def main( fullscreen, rotate ):
 
     """ Main function """
 
-    tron = TronGame( fullscreen )
+    tron = TronGame( fullscreen, rotate )
 
     ticks = pygame.time.get_ticks()
 
@@ -273,5 +298,6 @@ def main( fullscreen ):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser( description = 'Tron.' )
     parser.add_argument( '--fullscreen', action='store_true')
+    parser.add_argument( '--rotate', action='store_true')
     args = parser.parse_args()
-    main(args.fullscreen)
+    main(args.fullscreen,args.rotate)
