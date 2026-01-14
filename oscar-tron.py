@@ -227,12 +227,16 @@ class TronGame():
                         player.path.append( player.pos )
             if event.type == pygame.JOYBUTTONDOWN:
                 player = self.lookup[ event.instance_id ]
-                # Start button.
+                # Start button stops.
                 if event.button == 9:
-                    run = False
+                    self.run = False
             if event.type == pygame.JOYAXISMOTION:
                 vel = None
+<<<<<<< HEAD
                 player = lookup[ event.instance_id ]
+=======
+                player = self.lookup[ event.instance_id ]
+>>>>>>> 7eac590dce7c1b77eee0759cfff77066a65b4c0c
                 if not player.dead:
                     if player.joystick.get_axis(0) < -DEADZONE and player.vel[0] != 0:
                         vel = [0, +self.speed]
