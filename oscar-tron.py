@@ -227,9 +227,9 @@ class TronGame():
                         player.path.append( player.pos )
             if event.type == pygame.JOYBUTTONDOWN:
                 player = self.lookup[ event.instance_id ]
-                # Start button.
+                # Start button stops.
                 if event.button == 9:
-                    run = False
+                    self.run = False
             if event.type == pygame.JOYAXISMOTION:
                 vel = None
                 player = self.lookup[ event.instance_id ]
