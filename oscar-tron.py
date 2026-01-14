@@ -232,7 +232,7 @@ class TronGame():
                     run = False
             if event.type == pygame.JOYAXISMOTION:
                 vel = None
-                player = players[ lookup[ event.instance_id ]]
+                player = lookup[ event.instance_id ]
                 if not player.dead:
                     if player.joystick.get_axis(0) < -DEADZONE and player.vel[0] != 0:
                         vel = [0, +self.speed]
