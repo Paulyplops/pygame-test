@@ -144,6 +144,8 @@ class TronGame():
             self.width = self.screen_width
             self.height = self.screen_height
 
+        self.rotate = rotate
+
         self.background = pygame.Surface( (self.screen_width, self.screen_height) )
         self.background.fill(BLACK)
         self.surface = pygame.Surface( (self.width, self.height), pygame.SRCALPHA)
@@ -184,7 +186,8 @@ class TronGame():
         write( self.surface, 10, 10, "Words" )
         
         self.screen.blit( self.background, (0, 0))
-        self.screen.blit( pygame.transform.rotate( self.surface, 90 ), (0, 0))
+        if self.rotate:
+            self.screen.blit( pygame.transform.rotate( self.surface, 90 ), (0, 0))
         pygame.display.flip()
 
     def update(self, delta_time):
