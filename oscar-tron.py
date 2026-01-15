@@ -4,8 +4,8 @@ from enum import IntEnum
 import argparse
 import random
 
-SCREEN_WIDTH = 800
-SCREEN_HEIGHT = 1000
+SCREEN_WIDTH = 600
+SCREEN_HEIGHT = 800
 SCREEN_TITLE = "Tron"
 DEADZONE = 0.1
 BLACK = 0, 0, 0
@@ -119,6 +119,119 @@ class Player:
         self.path = [ start, start ]
         self.joystick = None
         self.dead = False
+        self.score = 0
+
+class Level():
+
+    def __init__(self, width, height):
+
+        self.speed = height * 0.1
+
+        self.particles = []
+
+        self.players = [
+                    Player( [pygame.K_a,pygame.K_d,pygame.K_w,pygame.K_s], [width*0.5, height*0.2], [0,self.speed], (0,0,255) ),
+                    Player( [pygame.K_LEFT, pygame.K_RIGHT, pygame.K_UP, pygame.K_DOWN ], [width*0.5,height*0.8], [0,-self.speed], (255,0,0) )
+            ]
+
+        self.lookup = { pygame.joystick.Joystick(x).get_instance_id() : self.players[x]  for x in range(pygame.joystick.get_count()) }
+
+        for x in range(pygame.joystick.get_count()):
+            self.players[x].joystick = pygame.joystick.Joystick(x)
+
+    def draw(self, width, height, surface):
+        for player in self.players:
+            pygame.draw.lines( surface, player.col, False, player.path, WIDTH)
+            pygame.draw.rect( surface, player.col, pygame.Rect( player.pos[0]-2, player.pos[1]-2, 5, 5) )
+
+        for particle in self.particles:
+            r = min( round( (particle.col.r + 100 * particle.heat ) * particle.heat ), 255 )
+            g = min( round( (particle.col.b + 100 * particle.heat ) * particle.heat ), 255 )
+            b = min( round( (particle.col.g + 100 * particle.heat ) * particle.heat ), 255 )
+            surface.set_at( (round(particle.pos[0]),round(particle.pos[1]) ), (r,g,b) )
+
+        write( surface, 10, 10, "00000" )
+        write( surface, width // 2 + 10, 10, "00000" )
+
+    def update( self, delta_time):
+
+        for player in self.players:
+            if player.dead:
+                player.col.a = round( player.col.a * 0.99 )
+                continue
+            player.pos = ( 
+                player.pos[0] + player.vel[0] * delta_time / 1000, 
+                player.pos[1] + player.vel[1] * delta_time / 1000)
+
+            for opponent in self.players:
+                for previous, current in zip( opponent.path, opponent.path[1:]):
+                    if opponent != player and collision( (player.pos, player.path[-1]), opponent.path ):
+                        self.crash( player )
+                    elif collision( (player.pos, player.path[-1]), opponent.path[:-2] ):
+                        self.crash( player )
+
+            player.path[-1] = player.pos
+
+        for particle in self.particles:
+            particle.pos = ( 
+                particle.pos[0] + particle.vel[0] * delta_time / 1000, 
+                particle.pos[1] + particle.vel[1] * delta_time / 1000)
+            particle.vel = ( 
+                particle.vel[0] * 0.99, 
+                particle.vel[1] * 0.99)
+            particle.heat *= 0.99;
+
+
+    def crash( self, player ):
+        for i in range(0,10):
+            particle = Particle( player.pos, player.vel, pygame.Color( player.col ) )
+            particle.pos = player.pos
+            particle.vel = ( player.vel[0] + jitter() * 100, 
+                             player.vel[1] + jitter() * 100 )
+            self.particles.append( particle )
+        player.vel = [0,0]
+        player.dead = True
+
+
+    def handle(self, event):
+
+        if event.type == pygame.KEYDOWN:
+            for player in self.players:
+                if player.dead:
+                    continue
+                vel = None
+                if event.key == player.keys[ Keys.UP ] and player.vel[0] != 0:
+                    vel = [0, -self.speed]
+                if event.key == player.keys[ Keys.DOWN ] and player.vel[0] != 0:
+                    vel = [0, +self.speed]
+                if event.key == player.keys[ Keys.RIGHT ]and player.vel[1] != 0:
+                    vel = [+self.speed, 0]
+                if event.key == player.keys[ Keys.LEFT ] and player.vel[1] != 0:
+                    vel = [-self.speed, 0]
+                if vel:
+                    player.vel = vel
+                    player.path.append( player.pos )
+        if event.type == pygame.JOYBUTTONDOWN:
+            player = self.lookup[ event.instance_id ]
+        if event.type == pygame.JOYAXISMOTION:
+            vel = None
+            player = self.lookup[ event.instance_id ]
+            if not player.dead:
+                if player.joystick.get_axis(0) < -DEADZONE and player.vel[0] != 0:
+                    vel = [0, +self.speed]
+                if player.joystick.get_axis(0) > DEADZONE and player.vel[0] != 0:
+                    vel = [0, -self.speed]
+                if player.joystick.get_axis(1) < -DEADZONE and player.vel[1] != 0:
+                    vel = [-self.speed, 0]
+                if player.joystick.get_axis(1) > DEADZONE and player.vel[1] != 0:
+                    vel = [+self.speed, 0]
+            if vel:
+                player.vel = vel
+                player.path.append( player.pos )
+
+
+
+
 
 class TronGame():
 
@@ -148,23 +261,17 @@ class TronGame():
 
         self.background = pygame.Surface( (self.screen_width, self.screen_height) )
         self.background.fill(BLACK)
+
         self.surface = pygame.Surface( (self.width, self.height), pygame.SRCALPHA)
 
-        self.speed = self.height * 0.1
-
-        self.particles = []
-
-        self.players = [
-                    Player( [pygame.K_a,pygame.K_d,pygame.K_w,pygame.K_s], [self.width*0.5, self.height*0.2], [0,self.speed], (0,0,255) ),
-                    Player( [pygame.K_LEFT, pygame.K_RIGHT, pygame.K_UP, pygame.K_DOWN ], [self.width*0.5,self.height*0.8], [0,-self.speed], (255,0,0) )
-            ]
-
-        self.lookup = { pygame.joystick.Joystick(x).get_instance_id() : self.players[x]  for x in range(pygame.joystick.get_count()) }
-
-        for x in range(pygame.joystick.get_count()):
-            self.players[x].joystick = pygame.joystick.Joystick(x)
-
         self.run = True
+        
+        self.level = None
+
+    def start( self, players ):
+        if players == 2:
+            self.level = Level( self.width, self.height )
+
 
     def draw(self):
 
@@ -172,63 +279,24 @@ class TronGame():
 
         self.surface.fill(BLACK)
 
-        for player in self.players:
-            pygame.draw.lines( self.surface, player.col, False, player.path, WIDTH)
-            pygame.draw.rect( self.surface, player.col, pygame.Rect( player.pos[0]-2, player.pos[1]-2, 5, 5) )
+        if self.level:
+            self.level.draw( self.width, self.height, self.surface )
 
-        for particle in self.particles:
-
-            r = min( round( (particle.col.r + 100 * particle.heat ) * particle.heat ), 255 )
-            g = min( round( (particle.col.b + 100 * particle.heat ) * particle.heat ), 255 )
-            b = min( round( (particle.col.g + 100 * particle.heat ) * particle.heat ), 255 )
-            self.surface.set_at( (round(particle.pos[0]),round(particle.pos[1]) ), (r,g,b) )
-
-        write( self.surface, 10, 10, "Words" )
-        
+        write( self.surface, 10, 10, "Hello" )
         self.screen.blit( self.background, (0, 0))
         if self.rotate:
             self.screen.blit( pygame.transform.rotate( self.surface, 90 ), (0, 0))
+        else:
+            self.screen.blit( self.surface, (0, 0))
         pygame.display.flip()
 
     def update(self, delta_time):
         
         """ Update state """
 
-        for player in self.players:
-            if player.dead:
-                player.col.a = round( player.col.a * 0.99 )
-                continue
-            player.pos = ( 
-                player.pos[0] + player.vel[0] * delta_time / 1000, 
-                player.pos[1] + player.vel[1] * delta_time / 1000)
+        if self.level:
+            self.level.update( delta_time )
 
-            for opponent in self.players:
-                for previous, current in zip( opponent.path, opponent.path[1:]):
-                    if opponent != player and collision( (player.pos, player.path[-1]), opponent.path ):
-                        self.crash( player )
-                    elif collision( (player.pos, player.path[-1]), opponent.path[:-2] ):
-                        self.crash( player )
-
-            player.path[-1] = player.pos
-
-        for particle in self.particles:
-            particle.pos = ( 
-                particle.pos[0] + particle.vel[0] * delta_time / 1000, 
-                particle.pos[1] + particle.vel[1] * delta_time / 1000)
-            particle.vel = ( 
-                particle.vel[0] * 0.99, 
-                particle.vel[1] * 0.99)
-            particle.heat *= 0.99;
-
-    def crash( self, player ):
-        for i in range(0,10):
-            particle = Particle( player.pos, player.vel, pygame.Color( player.col ) )
-            particle.pos = player.pos
-            particle.vel = ( player.vel[0] + jitter() * 100, 
-                             player.vel[1] + jitter() * 100 )
-            self.particles.append( particle )
-        player.vel = [0,0]
-        player.dead = True
 
     def handle(self):
 
@@ -238,42 +306,12 @@ class TronGame():
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_q:
                     self.run = False
-                for player in self.players:
-                    if player.dead:
-                        continue
-                    vel = None
-                    if event.key == player.keys[ Keys.UP ] and player.vel[0] != 0:
-                        vel = [0, -self.speed]
-                    if event.key == player.keys[ Keys.DOWN ] and player.vel[0] != 0:
-                        vel = [0, +self.speed]
-                    if event.key == player.keys[ Keys.RIGHT ]and player.vel[1] != 0:
-                        vel = [+self.speed, 0]
-                    if event.key == player.keys[ Keys.LEFT ] and player.vel[1] != 0:
-                        vel = [-self.speed, 0]
-                    if vel:
-                        player.vel = vel
-                        player.path.append( player.pos )
             if event.type == pygame.JOYBUTTONDOWN:
-                player = self.lookup[ event.instance_id ]
                 # Start button stops.
                 if event.button == 9:
                     self.run = False
-            if event.type == pygame.JOYAXISMOTION:
-                vel = None
-                player = self.lookup[ event.instance_id ]
-                if not player.dead:
-                    if player.joystick.get_axis(0) < -DEADZONE and player.vel[0] != 0:
-                        vel = [0, +self.speed]
-                    if player.joystick.get_axis(0) > DEADZONE and player.vel[0] != 0:
-                        vel = [0, -self.speed]
-                    if player.joystick.get_axis(1) < -DEADZONE and player.vel[1] != 0:
-                        vel = [-self.speed, 0]
-                    if player.joystick.get_axis(1) > DEADZONE and player.vel[1] != 0:
-                        vel = [+self.speed, 0]
-                if vel:
-                    player.vel = vel
-                    player.path.append( player.pos )
-
+            if self.level:
+                self.level.handle( event )
 
 
 def main( fullscreen, rotate ):
@@ -281,6 +319,7 @@ def main( fullscreen, rotate ):
     """ Main function """
 
     tron = TronGame( fullscreen, rotate )
+    tron.start(2)
 
     ticks = pygame.time.get_ticks()
 
