@@ -5,8 +5,8 @@ import argparse
 import random
 import math
 
-SCREEN_WIDTH = 600
-SCREEN_HEIGHT = 800
+SCREEN_WIDTH = 1152
+SCREEN_HEIGHT = 864
 SCREEN_TITLE = "Tron"
 DEADZONE = 0.1
 BLACK = 0, 0, 0
@@ -137,8 +137,8 @@ class Level():
         self.particles = []
 
         self.players = [
-                    Player( [pygame.K_a,pygame.K_d,pygame.K_w,pygame.K_s], [width*0.5, height*0.2], [0,self.speed], (0,0,255) ),
-                    Player( [pygame.K_LEFT, pygame.K_RIGHT, pygame.K_UP, pygame.K_DOWN ], [width*0.5,height*0.8], [0,-self.speed], (255,0,0) )
+                    Player( [pygame.K_a,pygame.K_d,pygame.K_w,pygame.K_s], [width*0.2, height*0.5], [self.speed,0], (0,0,255) ),
+                    Player( [pygame.K_LEFT, pygame.K_RIGHT, pygame.K_UP, pygame.K_DOWN ], [width*0.8,height*0.5], [-self.speed,0], (255,0,0) )
             ]
 
         self.lookup = { pygame.joystick.Joystick(x).get_instance_id() : self.players[x]  for x in range(pygame.joystick.get_count()) }
@@ -260,11 +260,11 @@ class TronGame():
 
         if fullscreen:
             info = pygame.display.Info()
-            self.screen = pygame.display.set_mode((0,0), pygame.FULLSCREEN)
+            self.screen = pygame.display.set_mode((0,0), pygame.FULLSCREEN | pygame.DOUBLEBUF)
             self.screen_width, self.screen_height = info.current_w, info.current_h
         else:
             self.screen_width, self.screen_height = SCREEN_WIDTH, SCREEN_HEIGHT
-            self.screen = pygame.display.set_mode((SCREEN_WIDTH,SCREEN_HEIGHT))
+            self.screen = pygame.display.set_mode((SCREEN_WIDTH,SCREEN_HEIGHT), pygame.DOUBLEBUF)
 
         if rotate:
             self.width = self.screen_height
