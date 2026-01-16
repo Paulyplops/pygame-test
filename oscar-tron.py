@@ -3,6 +3,7 @@ import pygame
 from enum import IntEnum
 import argparse
 import random
+import math
 
 SCREEN_WIDTH = 600
 SCREEN_HEIGHT = 800
@@ -10,6 +11,9 @@ SCREEN_TITLE = "Tron"
 DEADZONE = 0.1
 BLACK = 0, 0, 0
 WIDTH = 3
+SECONDS_DECAY = 3
+MS_DECAY = SECONDS_DECAY * 1000.0
+
 
 pygame.init()
 
@@ -101,6 +105,8 @@ def collision( seg, path ):
 def jitter():
     return ( random.random() - 0.5 ) * 2;
 
+def limit( a ):
+    return max( min( round( a ), 255 ), 0 )
 
 class Particle:
     def __init__(self, start, vel, col ):
@@ -118,7 +124,8 @@ class Player:
         self.col = pygame.Color(col)
         self.path = [ start, start ]
         self.joystick = None
-        self.dead = False
+        self.time_of_death = 0
+        self.time = 0
         self.score = 0
 
 class Level():
@@ -141,14 +148,22 @@ class Level():
 
     def draw(self, width, height, surface):
         for player in self.players:
-            pygame.draw.lines( surface, player.col, False, player.path, WIDTH)
-            pygame.draw.rect( surface, player.col, pygame.Rect( player.pos[0]-2, player.pos[1]-2, 5, 5) )
+            if not player.time_of_death:
+                pygame.draw.lines( surface, player.col, False, player.path, WIDTH)
+                pygame.draw.rect( surface, player.col, pygame.Rect( player.pos[0]-2, player.pos[1]-2, 5, 5) )
+            else:
+                col = player.col
+                col.a = round( 255 * ( 1.0 - min(player.time - player.time_of_death, MS_DECAY) / MS_DECAY ) )
+                pygame.draw.lines( surface, col, False, player.path, WIDTH)
 
         for particle in self.particles:
-            r = min( round( (particle.col.r + 100 * particle.heat ) * particle.heat ), 255 )
-            g = min( round( (particle.col.b + 100 * particle.heat ) * particle.heat ), 255 )
-            b = min( round( (particle.col.g + 100 * particle.heat ) * particle.heat ), 255 )
-            surface.set_at( (round(particle.pos[0]),round(particle.pos[1]) ), (r,g,b) )
+            SPARKLE = 100
+            r = limit( 300 * particle.heat + jitter() * SPARKLE )
+            g = limit( 300 * particle.heat + jitter() * SPARKLE )
+            b = limit( 100 * particle.heat + jitter() * SPARKLE )
+            col = particle.col + pygame.Color( r, g, b )  
+            col.a = round( 255 * particle.heat )
+            surface.set_at( (round(particle.pos[0]),round(particle.pos[1]) ), col )
 
         write( surface, 10, 10, "00000" )
         write( surface, width // 2 + 10, 10, "00000" )
@@ -156,9 +171,7 @@ class Level():
     def update( self, delta_time):
 
         for player in self.players:
-            if player.dead:
-                player.col.a = round( player.col.a * 0.99 )
-                continue
+            player.time += delta_time
             player.pos = ( 
                 player.pos[0] + player.vel[0] * delta_time / 1000, 
                 player.pos[1] + player.vel[1] * delta_time / 1000)
@@ -174,30 +187,33 @@ class Level():
 
         for particle in self.particles:
             particle.pos = ( 
-                particle.pos[0] + particle.vel[0] * delta_time / 1000, 
-                particle.pos[1] + particle.vel[1] * delta_time / 1000)
+                particle.pos[0] + particle.vel[0] * delta_time / 1000.0, 
+                particle.pos[1] + particle.vel[1] * delta_time / 1000.0)
             particle.vel = ( 
                 particle.vel[0] * 0.99, 
                 particle.vel[1] * 0.99)
-            particle.heat *= 0.99;
+            particle.heat *= math.pow( math.e, - delta_time / 1000.0 )
 
 
     def crash( self, player ):
+        if player.time_of_death:
+            return
+
         for i in range(0,10):
             particle = Particle( player.pos, player.vel, pygame.Color( player.col ) )
             particle.pos = player.pos
-            particle.vel = ( player.vel[0] + jitter() * 100, 
-                             player.vel[1] + jitter() * 100 )
+            particle.vel = ( player.vel[0] + jitter() * self.speed * 5, 
+                             player.vel[1] + jitter() * self.speed * 5 )
             self.particles.append( particle )
         player.vel = [0,0]
-        player.dead = True
+        player.time_of_death = player.time
 
 
     def handle(self, event):
 
         if event.type == pygame.KEYDOWN:
             for player in self.players:
-                if player.dead:
+                if player.time_of_death:
                     continue
                 vel = None
                 if event.key == player.keys[ Keys.UP ] and player.vel[0] != 0:
@@ -216,7 +232,7 @@ class Level():
         if event.type == pygame.JOYAXISMOTION:
             vel = None
             player = self.lookup[ event.instance_id ]
-            if not player.dead:
+            if not player.time_of_death:
                 if player.joystick.get_axis(0) < -DEADZONE and player.vel[0] != 0:
                     vel = [0, +self.speed]
                 if player.joystick.get_axis(0) > DEADZONE and player.vel[0] != 0:
