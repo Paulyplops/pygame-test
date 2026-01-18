@@ -137,8 +137,8 @@ class Level():
         self.particles = []
 
         self.players = [
-                    Player( [pygame.K_a,pygame.K_d,pygame.K_w,pygame.K_s], [width*0.2, height*0.5], [self.speed,0], (0,0,255) ),
-                    Player( [pygame.K_LEFT, pygame.K_RIGHT, pygame.K_UP, pygame.K_DOWN ], [width*0.8,height*0.5], [-self.speed,0], (255,0,0) )
+                    Player( [pygame.K_a,pygame.K_d,pygame.K_w,pygame.K_s], [width*0.2, height*0.5], [self.speed,0], (230,20,20) ),
+                    Player( [pygame.K_LEFT, pygame.K_RIGHT, pygame.K_UP, pygame.K_DOWN ], [width*0.8,height*0.5], [-self.speed,0], (20,20,230) )
             ]
 
         self.lookup = { pygame.joystick.Joystick(x).get_instance_id() : self.players[x]  for x in range(pygame.joystick.get_count()) }
@@ -264,10 +264,6 @@ class TronGame():
             self.screen_width, self.screen_height = info.current_w, info.current_h
         else:
             self.screen_width, self.screen_height = SCREEN_WIDTH, SCREEN_HEIGHT
-            if rotate:
-                self.screen = pygame.display.set_mode((SCREEN_HEIGHT, SCREEN_WIDTH), pygame.DOUBLEBUF)
-            else:
-                self.screen = pygame.display.set_mode((SCREEN_WIDTH,SCREEN_HEIGHT), pygame.DOUBLEBUF)
 
         if rotate:
             self.width = self.screen_height
@@ -278,7 +274,11 @@ class TronGame():
         else:
             self.width = self.screen_width
             self.height = self.screen_height
+            self.background = None
             self.surface = self.screen
+
+        if not fullscreen:
+            self.screen = pygame.display.set_mode((self.width, self.height), pygame.DOUBLEBUF)
 
         self.rotate = rotate
 
