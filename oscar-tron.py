@@ -22,23 +22,23 @@ pygame.mouse.set_visible(False)
 pygame.joystick.init()
 
 
-font = pygame.image.load("reduction.bmp")
+font = pygame.image.load("reduction-rotated.bmp")
 font_size = 50
 
 def write( surface, x, y, text ):
     for l in range(0,len(text)):
         letter = text[l]
         i = ord( letter ) - 32
-        a = i % 10 * font_size
-        b = i // 10 * font_size
-        surface.blit( font, (x+l*50, y), (a,b,50,50) )
+        a = (i // 10 * font_size)
+        b = font.get_height() - (i % 10 * font_size) - font_size
+        surface.blit( font, (x, y-l*font_size - font_size), (a,b,font_size,font_size) )
 
 class Keys(IntEnum):
     """The order the keys are stored."""
-    LEFT = 0
-    RIGHT = 1
-    UP = 2
-    DOWN = 3
+    DOWN = 0
+    UP = 1
+    LEFT = 2
+    RIGHT = 3
 
 # function to check if point q lies on line segment 'pr'
 def on_segment(p, q, r):
@@ -165,8 +165,8 @@ class Level():
             col.a = round( 255 * particle.heat )
             surface.set_at( (round(particle.pos[0]),round(particle.pos[1]) ), col )
 
-        write( surface, 10, 10, "00000" )
-        write( surface, width // 2 + 10, 10, "00000" )
+        write( surface, 10, height - 10, "00000" )
+        write( surface, 10, height // 2 - 10, "00000" )
 
     def update( self, delta_time):
 
@@ -264,21 +264,23 @@ class TronGame():
             self.screen_width, self.screen_height = info.current_w, info.current_h
         else:
             self.screen_width, self.screen_height = SCREEN_WIDTH, SCREEN_HEIGHT
-            self.screen = pygame.display.set_mode((SCREEN_WIDTH,SCREEN_HEIGHT), pygame.DOUBLEBUF)
+            if rotate:
+                self.screen = pygame.display.set_mode((SCREEN_HEIGHT, SCREEN_WIDTH), pygame.DOUBLEBUF)
+            else:
+                self.screen = pygame.display.set_mode((SCREEN_WIDTH,SCREEN_HEIGHT), pygame.DOUBLEBUF)
 
         if rotate:
             self.width = self.screen_height
             self.height = self.screen_width
+            self.background = pygame.Surface( (self.screen_width, self.screen_height) )
+            self.background.fill(BLACK)
+            self.surface = pygame.Surface( (self.width, self.height), pygame.SRCALPHA)
         else:
             self.width = self.screen_width
             self.height = self.screen_height
+            self.surface = self.screen
 
         self.rotate = rotate
-
-        self.background = pygame.Surface( (self.screen_width, self.screen_height) )
-        self.background.fill(BLACK)
-
-        self.surface = pygame.Surface( (self.width, self.height), pygame.SRCALPHA)
 
         self.run = True
         
@@ -298,12 +300,11 @@ class TronGame():
         if self.level:
             self.level.draw( self.width, self.height, self.surface )
 
-        write( self.surface, 10, 10, "Hello" )
-        self.screen.blit( self.background, (0, 0))
+        write( self.surface, 100, 500, "Hello" )
         if self.rotate:
-            self.screen.blit( pygame.transform.rotate( self.surface, 90 ), (0, 0))
-        else:
-            self.screen.blit( self.surface, (0, 0))
+            self.screen.blit( self.background, (0, 0))
+            self.screen.blit( pygame.transform.rotate( self.surface, -90 ), (0, 0))
+        
         pygame.display.flip()
 
     def update(self, delta_time):
