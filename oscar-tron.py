@@ -102,6 +102,13 @@ def collision( seg, path ):
     return False
 
 
+def check( player, opponent ):
+    for previous, current in zip( opponent.path, opponent.path[1:]):
+        if opponent != player and collision( (player.pos, player.path[-1]), opponent.path ):
+            return True
+        elif collision( (player.pos, player.path[-1]), opponent.path[:-2] ):
+            return True
+
 def jitter():
     return ( random.random() - 0.5 ) * 2;
 
@@ -115,6 +122,9 @@ class Particle:
         self.col = col
         self.heat = 1
 
+class Boundary:
+    def __init__( self, path ):
+        self.path = path
 
 class Player:
     def __init__(self, keys, start, vel, col ):
@@ -141,12 +151,17 @@ class Level():
                     Player( [pygame.K_LEFT, pygame.K_RIGHT, pygame.K_UP, pygame.K_DOWN ], [width*0.8,height*0.5], [-self.speed,0], (20,20,230) )
             ]
 
+        border = 20
+        self.boundary = Boundary( [ [ 50 + border, border], [ 50 + border, height - border ], [ width - border, height - border ], [width - border, border], [ 50 + border, border] ] )
+
         self.lookup = { pygame.joystick.Joystick(x).get_instance_id() : self.players[x]  for x in range(pygame.joystick.get_count()) }
 
         for x in range(pygame.joystick.get_count()):
             self.players[x].joystick = pygame.joystick.Joystick(x)
 
     def draw(self, width, height, surface):
+        pygame.draw.lines( surface, [255,255,0], False, self.boundary.path, WIDTH)
+
         for player in self.players:
             if not player.time_of_death:
                 pygame.draw.lines( surface, player.col, False, player.path, WIDTH)
@@ -175,13 +190,13 @@ class Level():
             player.pos = ( 
                 player.pos[0] + player.vel[0] * delta_time / 1000, 
                 player.pos[1] + player.vel[1] * delta_time / 1000)
+        
+            if check( player, self.boundary ):
+                self.crash(player)
 
             for opponent in self.players:
-                for previous, current in zip( opponent.path, opponent.path[1:]):
-                    if opponent != player and collision( (player.pos, player.path[-1]), opponent.path ):
-                        self.crash( player )
-                    elif collision( (player.pos, player.path[-1]), opponent.path[:-2] ):
-                        self.crash( player )
+                if check( player, opponent ):
+                    self.crash(player)
 
             player.path[-1] = player.pos
 
@@ -264,6 +279,7 @@ class TronGame():
             self.screen_width, self.screen_height = info.current_w, info.current_h
         else:
             self.screen_width, self.screen_height = SCREEN_WIDTH, SCREEN_HEIGHT
+            self.screen = pygame.display.set_mode((self.screen_width, self.screen_height), pygame.DOUBLEBUF)
 
         if rotate:
             self.width = self.screen_height
@@ -271,14 +287,11 @@ class TronGame():
             self.background = pygame.Surface( (self.screen_width, self.screen_height) )
             self.background.fill(BLACK)
             self.surface = pygame.Surface( (self.width, self.height), pygame.SRCALPHA)
-        else:
+        else: 
             self.width = self.screen_width
             self.height = self.screen_height
             self.background = None
             self.surface = self.screen
-
-        if not fullscreen:
-            self.screen = pygame.display.set_mode((self.width, self.height), pygame.DOUBLEBUF)
 
         self.rotate = rotate
 
