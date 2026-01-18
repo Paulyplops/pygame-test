@@ -248,13 +248,13 @@ class Level():
             vel = None
             player = self.lookup[ event.instance_id ]
             if not player.time_of_death:
-                if player.joystick.get_axis(0) < -DEADZONE and player.vel[0] != 0:
+                if player.joystick.get_axis(0) < -DEADZONE and abs( player.joystick.get_axis(1) ) < DEADZONE and player.vel[0] != 0:
                     vel = [0, +self.speed]
-                if player.joystick.get_axis(0) > DEADZONE and player.vel[0] != 0:
+                if player.joystick.get_axis(0) > DEADZONE and abs( player.joystick.get_axis(1) ) < DEADZONE and player.vel[0] != 0:
                     vel = [0, -self.speed]
-                if player.joystick.get_axis(1) < -DEADZONE and player.vel[1] != 0:
+                if player.joystick.get_axis(1) < -DEADZONE and abs( player.joystick.get_axis(0) ) < DEADZONE and player.vel[1] != 0:
                     vel = [-self.speed, 0]
-                if player.joystick.get_axis(1) > DEADZONE and player.vel[1] != 0:
+                if player.joystick.get_axis(1) > DEADZONE and abs( player.joystick.get_axis(0) ) < DEADZONE and player.vel[1] != 0:
                     vel = [+self.speed, 0]
             if vel:
                 player.vel = vel
