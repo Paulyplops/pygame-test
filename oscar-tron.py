@@ -170,13 +170,39 @@ class ScoreScreen():
             write( surface, 100, height // 4, self.players[1].name, True )
             write( surface, 100 + FONT_SIZE + MARGIN, height // 4, "WINS!", True )
 
+        f = FONT_SIZE * 3 // 2
+
         for p in range(0,2):
+            for c in range(0,3):
+                if c != self.columns[p]:
+                    l = self.letters[p][c] 
+                    y = c * FONT_SIZE - f
+                    write( surface, 500, height * 3 // 4 - p * height // 2 - y, self.alphabet[ l ] )
+            if self.columns[p] == 3:
+                pygame.draw.rect( surface, [255,255,255], 
+                          [ 500 + 10, height * 3 // 4 - p * height // 2 - f - 10, 
+                           20,20 ])
+
+
+                continue
             for letter in range(-4,+4):
                 l = ( self.letters[p][self.columns[p]] + letter ) % len( self.alphabet )
                 x = letter * FONT_SIZE + self.wheel_offsets[p]
-                y = self.columns[p] * FONT_SIZE
-                write( surface, 500 + x, height // 4 + p * height // 2 + y, self.alphabet[ l ] )
+                y = self.columns[p] * FONT_SIZE - f
+                write( surface, 500 + x, height * 3 // 4 - p * height // 2 - y, self.alphabet[ l ] )
 
+        m = 15
+        pygame.draw.lines( surface, [0,0,255], True, [
+                          [ 500 + FONT_SIZE, height // 4 - f], 
+                          [ 500 + FONT_SIZE, height // 4 + f + m ], 
+                          [ 500 - m, height // 4 + f + m ], 
+                          [ 500 - m, height // 4 - f] ] , LINE_WIDTH)
+
+        pygame.draw.lines( surface, [255,0,0], True, [
+                          [ 500 + FONT_SIZE, height * 3 // 4 - f ], 
+                          [ 500 + FONT_SIZE, height * 3 // 4 + f + m ], 
+                          [ 500 - m, height * 3 // 4 + f + m ], 
+                          [ 500 - m, height * 3 // 4 - f] ] , LINE_WIDTH)
 
         pygame.draw.line( surface, [255,255,0], [ MARGIN * 2 + FONT_SIZE, height // 2 ], [ width - MARGIN, height // 2 ], LINE_WIDTH)
 
@@ -194,17 +220,14 @@ class ScoreScreen():
 
 
         for p in range(0,2):
-            self.wheel_offsets[p] += self.wheel_vels[p] * delta_time / 1000
-            self.wheel_vels[p] *= math.pow( math.e, - delta_time / 1000.0 * 2 )
-            
-            if self.wheel_offsets[p] < 0:
-                self.wheel_vels[p] += 500 * delta_time / 1000
-            if self.wheel_offsets[p] > 0:
-                self.wheel_vels[p] -= 500 * delta_time / 1000
+            self.wheel_offsets[p] *= math.pow( math.e, - delta_time / 1000.0 * 10 )
+
 
     def handle(self, event):
         if event.type == pygame.KEYUP:
             for p in range(0,2):
+                if self.columns[p] == 3:
+                    continue
                 player = self.players[p]
                 if event.key == player.keys[ Keys.RIGHT ]:
                     self.letters[p][self.columns[p]] = ( self.letters[p][self.columns[p]] + 1 ) % len( self.alphabet )
@@ -213,12 +236,14 @@ class ScoreScreen():
                     self.letters[p][self.columns[p]] = ( self.letters[p][self.columns[p]] - 1 ) % len( self.alphabet )
                     self.wheel_offsets[p] -= FONT_SIZE
                 if event.key == player.keys[ Keys.UP ]:
-                    self.columns[p] = min( self.columns[p] + 1, 2 )
+                    self.columns[p] = min( self.columns[p] + 1, 3 )
                 if event.key == player.keys[ Keys.DOWN ]:
                     self.columns[p] = max( self.columns[p] - 1, 0 )
         if event.type == pygame.JOYAXISMOTION:
             vel = None
             player = self.lookup[ event.instance_id ]
+            if self.columns[p] == 3:
+                continue
             if not player.time_of_death:
                 if player.joystick.get_axis(0) < -DEADZONE and abs( player.joystick.get_axis(1) ) < DEADZONE:
                     vel = [0, +self.speed]
