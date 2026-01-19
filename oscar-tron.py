@@ -180,8 +180,8 @@ class Level():
             col.a = round( 255 * particle.heat )
             surface.set_at( (round(particle.pos[0]),round(particle.pos[1]) ), col )
 
-        write( surface, 10, height - 10, "00000" )
-        write( surface, 10, height // 2 - 10, "00000" )
+        write( surface, 10, height - 10, str(int(self.players[0].score) ) )
+        write( surface, 10, height // 2 - 10, str(int(self.players[1].score) ) )
 
     def update( self, delta_time):
 
