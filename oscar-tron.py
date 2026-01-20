@@ -17,7 +17,7 @@ FONT_SIZE = 50
 MARGIN = 10
 WINNER_BONUS = 500
 TIME_BONUS = 10
-ROLL_ON_TIME = 4000
+ROLL_ON_TIME = 3000
 
 pygame.init()
 
@@ -153,8 +153,8 @@ class ScoreScreen():
         self.wheel_vels = [0,0]
 
         self.letters = [[0,0,0],[0,0,0]]
-        self.names = ["---","---"]
         self.columns = [0,0]
+        self.shift = [0,0]
 
 
     def draw(self, width, height, surface):
@@ -220,21 +220,33 @@ class ScoreScreen():
 
 
         for p in range(0,2):
-            self.wheel_offsets[p] *= math.pow( math.e, - delta_time / 1000.0 * 10 )
+            l = int( self.wheel_offsets[p] / FONT_SIZE )
+            if l:
+                self.letters[p][self.columns[p]] = ( self.letters[p][self.columns[p]] - l ) % len( self.alphabet )
+                self.wheel_offsets[p] -= FONT_SIZE * l
+
+        for p in range(0,2):
+            self.wheel_offsets[p] += self.wheel_vels[p] * delta_time / 1000.0
+            self.wheel_offsets[p] *= math.pow( math.e, - delta_time / 1000.0 * 1 )
+            self.wheel_vels[p] *= math.pow( math.e, - delta_time / 1000.0 * 10 )
 
 
     def handle(self, event):
-        if event.type == pygame.KEYUP:
+        if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_SPACE:
+                if self.columns[0] == 3 and self.columns[1] == 3:
+                    self.save()
             for p in range(0,2):
                 if self.columns[p] == 3:
                     continue
                 player = self.players[p]
                 if event.key == player.keys[ Keys.RIGHT ]:
-                    self.letters[p][self.columns[p]] = ( self.letters[p][self.columns[p]] + 1 ) % len( self.alphabet )
-                    self.wheel_offsets[p] += FONT_SIZE
+                    self.wheel_vels[p] = -800
                 if event.key == player.keys[ Keys.LEFT ]:
-                    self.letters[p][self.columns[p]] = ( self.letters[p][self.columns[p]] - 1 ) % len( self.alphabet )
-                    self.wheel_offsets[p] -= FONT_SIZE
+                    self.wheel_vels[p] = +800
+        if event.type == pygame.KEYUP:
+            for p in range(0,2):
+                player = self.players[p]
                 if event.key == player.keys[ Keys.UP ]:
                     self.columns[p] = min( self.columns[p] + 1, 3 )
                 if event.key == player.keys[ Keys.DOWN ]:
@@ -242,18 +254,26 @@ class ScoreScreen():
         if event.type == pygame.JOYAXISMOTION:
             vel = None
             player = self.lookup[ event.instance_id ]
-            if self.columns[p] == 3:
-                continue
-            if not player.time_of_death:
+            p = event.instance_id
+            if not player.time_of_death and self.columns[p] != 3:
                 if player.joystick.get_axis(0) < -DEADZONE and abs( player.joystick.get_axis(1) ) < DEADZONE:
-                    vel = [0, +self.speed]
+                    self.shift[p] = 1
                 if player.joystick.get_axis(0) > DEADZONE and abs( player.joystick.get_axis(1) ) < DEADZONE:
-                    vel = [0, -self.speed]
+                    self.shift[p] = -1
                 if player.joystick.get_axis(1) < -DEADZONE and abs( player.joystick.get_axis(0) ) < DEADZONE:
-                    vel = [-self.speed, 0]
+                    self.wheel_vels[p] = -800
                 if player.joystick.get_axis(1) > DEADZONE and abs( player.joystick.get_axis(0) ) < DEADZONE:
-                    vel = [+self.speed, 0]
+                    self.wheel_vels[p] = -800
+                if abs(player.joystick.get_axis(0) ) < DEADZONE and abs( player.joystick.get_axis(1) ) < DEADZONE and self.shift[p]:
+                    self.columns[p] = max( min( self.columns[p] + self.shift[p], 3 ), 0 )
 
+    def save(self):
+        for p in range(0,2):
+            name = ""
+            for l in self.letters[p]:
+                name += self.alphabet[l]
+            score = self.players[p].score
+            print( name, score )
 
 class Level():
 
