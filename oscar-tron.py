@@ -4,6 +4,7 @@ from enum import IntEnum
 import argparse
 import random
 import math
+import json
 
 SCREEN_WIDTH = 1152
 SCREEN_HEIGHT = 864
@@ -25,8 +26,15 @@ pygame.mouse.set_visible(False)
 
 pygame.joystick.init()
 
-
 font = pygame.image.load("reduction-rotated.bmp")
+
+highscores = {}
+
+try:
+    with open('highscores.json','r') as f:
+        highscores = json.load( f )
+except FileNotFoundError:
+    pass
 
 def write( surface, x, y, text, centered = False ):
     if centered:
@@ -251,6 +259,10 @@ class ScoreScreen():
                     self.columns[p] = min( self.columns[p] + 1, 3 )
                 if event.key == player.keys[ Keys.DOWN ]:
                     self.columns[p] = max( self.columns[p] - 1, 0 )
+        if event.type == pygame.JOYBUTTONDOWN:
+                if event.button == 0:
+                    if self.columns[0] == 3 and self.columns[1] == 3:
+                        self.save()
         if event.type == pygame.JOYAXISMOTION:
             p = event.instance_id
             player = self.players[p]
@@ -266,13 +278,31 @@ class ScoreScreen():
             if abs(player.joystick.get_axis(0) ) < DEADZONE and abs( player.joystick.get_axis(1) ) < DEADZONE and self.shift[p] != 0:
                 self.columns[p] = max( min( self.columns[p] + self.shift[p], 3 ), 0 )
 
+    
     def save(self):
+        scores = {}
+        names=["",""]
         for p in range(0,2):
             name = ""
             for l in self.letters[p]:
                 name += self.alphabet[l]
             score = self.players[p].score
-            print( name, score )
+            scores[name] = score
+            names[p] = name
+
+        for p in range(0,2):
+            name = names[p]
+            other = names[(p+1)%2]
+            if name not in highscores:
+                highscores[name] = {}
+            highscores[name][other] = scores[name]
+       
+        with open('highscores.json','w') as f:
+            json.dump( highscores, f )
+
+
+
+        
 
 class Level():
 
