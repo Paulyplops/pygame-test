@@ -255,11 +255,11 @@ class ScoreScreen():
             p = event.instance_id
             player = self.players[p]
             if player.joystick.get_axis(0) < -DEADZONE and abs( player.joystick.get_axis(1) ) < DEADZONE:
-                self.shift[p] = 1
-            if player.joystick.get_axis(0) > DEADZONE and abs( player.joystick.get_axis(1) ) < DEADZONE:
                 self.shift[p] = -1
+            if player.joystick.get_axis(0) > DEADZONE and abs( player.joystick.get_axis(1) ) < DEADZONE:
+                self.shift[p] = +1
             if player.joystick.get_axis(1) < -DEADZONE and abs( player.joystick.get_axis(0) ) < DEADZONE:
-                self.wheel_vels[p] = -800
+                self.wheel_vels[p] = +800
             if player.joystick.get_axis(1) > DEADZONE and abs( player.joystick.get_axis(0) ) < DEADZONE:
                 self.wheel_vels[p] = -800
             if abs(player.joystick.get_axis(0) ) < DEADZONE and abs( player.joystick.get_axis(1) ) < DEADZONE and self.shift[p] != 0:
