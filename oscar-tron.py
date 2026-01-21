@@ -253,8 +253,8 @@ class ScoreScreen():
                     self.columns[p] = max( self.columns[p] - 1, 0 )
         if event.type == pygame.JOYAXISMOTION:
             vel = None
-            player = self.lookup[ event.instance_id ]
             p = event.instance_id
+            player = self.players[p]
             if not player.time_of_death and self.columns[p] != 3:
                 if player.joystick.get_axis(0) < -DEADZONE and abs( player.joystick.get_axis(1) ) < DEADZONE:
                     self.shift[p] = 1
