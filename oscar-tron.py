@@ -252,20 +252,18 @@ class ScoreScreen():
                 if event.key == player.keys[ Keys.DOWN ]:
                     self.columns[p] = max( self.columns[p] - 1, 0 )
         if event.type == pygame.JOYAXISMOTION:
-            vel = None
             p = event.instance_id
             player = self.players[p]
-            if not player.time_of_death and self.columns[p] != 3:
-                if player.joystick.get_axis(0) < -DEADZONE and abs( player.joystick.get_axis(1) ) < DEADZONE:
-                    self.shift[p] = 1
-                if player.joystick.get_axis(0) > DEADZONE and abs( player.joystick.get_axis(1) ) < DEADZONE:
-                    self.shift[p] = -1
-                if player.joystick.get_axis(1) < -DEADZONE and abs( player.joystick.get_axis(0) ) < DEADZONE:
-                    self.wheel_vels[p] = -800
-                if player.joystick.get_axis(1) > DEADZONE and abs( player.joystick.get_axis(0) ) < DEADZONE:
-                    self.wheel_vels[p] = -800
-                if abs(player.joystick.get_axis(0) ) < DEADZONE and abs( player.joystick.get_axis(1) ) < DEADZONE and self.shift[p]:
-                    self.columns[p] = max( min( self.columns[p] + self.shift[p], 3 ), 0 )
+            if player.joystick.get_axis(0) < -DEADZONE and abs( player.joystick.get_axis(1) ) < DEADZONE:
+                self.shift[p] = 1
+            if player.joystick.get_axis(0) > DEADZONE and abs( player.joystick.get_axis(1) ) < DEADZONE:
+                self.shift[p] = -1
+            if player.joystick.get_axis(1) < -DEADZONE and abs( player.joystick.get_axis(0) ) < DEADZONE:
+                self.wheel_vels[p] = -800
+            if player.joystick.get_axis(1) > DEADZONE and abs( player.joystick.get_axis(0) ) < DEADZONE:
+                self.wheel_vels[p] = -800
+            if abs(player.joystick.get_axis(0) ) < DEADZONE and abs( player.joystick.get_axis(1) ) < DEADZONE and self.shift[p] != 0:
+                self.columns[p] = max( min( self.columns[p] + self.shift[p], 3 ), 0 )
 
     def save(self):
         for p in range(0,2):
