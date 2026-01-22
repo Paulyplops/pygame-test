@@ -161,15 +161,15 @@ class HiscoreScreen():
 
     def __init__( self ):
         player_scores = collections.defaultdict(int)
-        for player_name, data in highscores:
-            for opponent_name, score in data:
+        for player_name, data in highscores.items():
+            for opponent_name, score in data.items():
                 player_scores[player_name] += score
         self.scores = sorted( player_scores.items(), key = lambda kv: kv[1], reverse=True )
         self.start = 0
 
 
     def draw(self, width, height, surface):
-        surface.blit( logo, 50, height // 2 - logo.get_width() // 2 )
+        surface.blit( logo, ( 50, height // 2 - logo.get_height() // 2 ) )
         for i, x in enumerate( self.scores ):
             x = 100 + ( FONT_SIZE + MARGIN ) * i,
             write( x, height * 2 // 3, x[0] )
@@ -181,16 +181,16 @@ class HiscoreScreen():
             return Level( width, height )
 
 
-    def handle(self):
-        for event in pygame.event.get():
-            if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_1:
-                    self.start = 0
-                if event.key == pygame.K_2:
-                    self.start = 1
-            if event.type == pygame.JOYBUTTONUP:
-                if event.button == 9:
-                    self.start = event.instance_id
+    def handle(self, event ):
+        if event.type == pygame.KEYDOWN:
+            print(event.key)
+            if event.key == pygame.K_1:
+                self.start = 0
+            if event.key == pygame.K_2:
+                self.start = 1
+        if event.type == pygame.JOYBUTTONUP:
+            if event.button == 9:
+                self.start = event.instance_id
 
 
 
@@ -258,7 +258,7 @@ class ScoreScreen():
 
         pygame.draw.line( surface, [255,255,0], [ MARGIN * 2 + FONT_SIZE, height // 2 ], [ width - MARGIN, height // 2 ], LINE_WIDTH)
 
-    def update( self, delta_time):
+    def update( self, delta_time, width, height):
         delta = delta_time
         for player in self.players:
             delta_score = 0
@@ -398,7 +398,7 @@ class Level():
         write( surface, MARGIN, height - MARGIN, str(int(self.players[0].score) ) )
         write( surface, MARGIN, height // 2 - MARGIN, str(int(self.players[1].score) ) )
 
-    def update( self, delta_time):
+    def update( self, delta_time, width, height ):
         self.time += delta_time
         time_of_death = 0
 
@@ -536,8 +536,8 @@ class TronGame():
         self.run = True
         
         self.level = HiscoreScreen()
-        self.coin_buttion = False
-        self.start_buttion = False
+        self.coin_button = False
+        self.start_button = False
 
 
 
@@ -556,7 +556,7 @@ class TronGame():
         
         pygame.display.flip()
 
-    def update(self, delta_time):
+    def update(self, delta_time ):
         
         """ Update state """
 
@@ -578,12 +578,12 @@ class TronGame():
                 if event.button == 9:
                     self.start_button = True
                 if event.button == 8:
-                    self.coin_buttion = True
+                    self.coin_button = True
             if event.type == pygame.JOYBUTTONUP:
                 if event.button == 9:
                     self.start_button = False
                 if event.button == 8:
-                    self.coin_buttion = False
+                    self.coin_button = False
             if self.level:
                 self.level.handle( event )
 
