@@ -1,10 +1,11 @@
 import sys
 import pygame
-from enum import IntEnum
+import enum
 import argparse
 import random
 import math
 import json
+import collections
 
 SCREEN_WIDTH = 1152
 SCREEN_HEIGHT = 864
@@ -28,13 +29,16 @@ pygame.joystick.init()
 
 font = pygame.image.load("reduction-rotated.bmp")
 
-highscores = {}
+logo = pygame.image.load("oscar-tron-rotated.bmp")
+
+# highscores is a dict of dicts of scores
+# Player - Opponent - Score
 
 try:
     with open('highscores.json','r') as f:
         highscores = json.load( f )
 except FileNotFoundError:
-    pass
+    highscores = {}
 
 def write( surface, x, y, text, centered = False ):
     if centered:
@@ -46,7 +50,7 @@ def write( surface, x, y, text, centered = False ):
         b = font.get_height() - (i % 10 * FONT_SIZE) - FONT_SIZE
         surface.blit( font, (x, y-l*FONT_SIZE - FONT_SIZE), (a,b,FONT_SIZE,FONT_SIZE) )
 
-class Keys(IntEnum):
+class Keys(enum.IntEnum):
     """The order the keys are stored."""
     DOWN = 0
     UP = 1
@@ -152,6 +156,39 @@ class Player:
         self.score = 0
         self.bonus = 0
 
+
+class HiscoreScreen():
+
+    def __init__( self ):
+        player_scores = collections.defaultdict(int)
+        for player_name, data in highscores:
+            for opponent_name, score in data:
+                player_scores[player_name] += score
+        self.scores = sorted( player_scores.items(), key = lambda kv: kv[1], reverse=True )
+        self.start = 0
+
+
+    def draw(self, width, height, surface):
+        surface.blit( logo, 50, height // 2 - logo.get_width() // 2 )
+        for i, x in enumerate( self.scores ):
+            x = 100 + ( FONT_SIZE + MARGIN ) * i,
+            write( x, height * 2 // 3, x[0] )
+            write( x, height // 3, str( x[1] ) )
+
+
+    def update( self, delta_time, width, height ):
+        if self.start == 1:
+            return Level( width, height )
+
+
+    def handle(self):
+        for event in pygame.event.get():
+            if event.type == pygame.JOYBUTTONUP:
+                if event.button == 9:
+                    self.start = event.instance_id
+
+
+
 class ScoreScreen():
 
     def __init__( self, players ):
@@ -163,6 +200,8 @@ class ScoreScreen():
         self.letters = [[0,0,0],[0,0,0]]
         self.columns = [0,0]
         self.shift = [0,0]
+
+        self.finished = False
 
 
     def draw(self, width, height, surface):
@@ -238,12 +277,16 @@ class ScoreScreen():
             self.wheel_offsets[p] *= math.pow( math.e, - delta_time / 1000.0 * 1 )
             self.wheel_vels[p] *= math.pow( math.e, - delta_time / 1000.0 * 10 )
 
+        if self.finished:
+            self.save()
+            return HiscoreScreen()
+
 
     def handle(self, event):
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_SPACE:
                 if self.columns[0] == 3 and self.columns[1] == 3:
-                    self.save()
+                    self.finished = True
             for p in range(0,2):
                 if self.columns[p] == 3:
                     continue
@@ -487,11 +530,10 @@ class TronGame():
 
         self.run = True
         
-        self.level = None
+        self.level = HiscoreScreen()
+        self.coin_buttion = False
+        self.start_buttion = False
 
-    def start( self, players ):
-        if players == 2:
-            self.level = Level( self.width, self.height )
 
 
     def draw(self):
@@ -514,7 +556,7 @@ class TronGame():
         """ Update state """
 
         if self.level:
-            new_level = self.level.update( delta_time )
+            new_level = self.level.update( delta_time, self.width, self.height )
             if new_level:
                 self.level = new_level
 
@@ -528,19 +570,26 @@ class TronGame():
                 if event.key == pygame.K_q:
                     self.run = False
             if event.type == pygame.JOYBUTTONDOWN:
-                # Start button stops.
                 if event.button == 9:
-                    self.run = False
+                    self.start_button = True
+                if event.button == 8:
+                    self.coin_buttion = True
+            if event.type == pygame.JOYBUTTONUP:
+                if event.button == 9:
+                    self.start_button = False
+                if event.button == 8:
+                    self.coin_buttion = False
             if self.level:
                 self.level.handle( event )
 
+        if self.coin_button and self.start_button:
+            self.run = False
 
 def main( fullscreen, rotate ):
 
     """ Main function """
 
     tron = TronGame( fullscreen, rotate )
-    tron.start(2)
 
     ticks = pygame.time.get_ticks()
 
