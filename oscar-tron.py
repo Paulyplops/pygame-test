@@ -183,6 +183,11 @@ class HiscoreScreen():
 
     def handle(self):
         for event in pygame.event.get():
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_1:
+                    self.start = 0
+                if event.key == pygame.K_2:
+                    self.start = 1
             if event.type == pygame.JOYBUTTONUP:
                 if event.button == 9:
                     self.start = event.instance_id
