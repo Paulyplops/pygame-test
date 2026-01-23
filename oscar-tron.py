@@ -166,6 +166,7 @@ class HiscoreScreen():
                 player_scores[player_name] += score
         self.scores = sorted( player_scores.items(), key = lambda kv: kv[1], reverse=True )
         self.start = 0
+        self.message = ""
 
 
     def draw(self, width, height, surface):
@@ -175,6 +176,7 @@ class HiscoreScreen():
             x = 300 + ( FONT_SIZE + MARGIN ) * i
             write( surface, x, height * 2 // 3 + FONT_SIZE * 2 // 3, score[0] )
             write( surface, x, height // 3, str( score[1] ) )
+        write( surface, width - 100, height // 2, self.message, True )
 
 
     def update( self, delta_time, width, height ):
@@ -184,12 +186,13 @@ class HiscoreScreen():
 
     def handle(self, event ):
         if event.type == pygame.KEYDOWN:
-            print(event.key)
+            self.message = "Key " + str( event.key )
             if event.key == pygame.K_1:
                 self.start = 0
             if event.key == pygame.K_2:
                 self.start = 1
         if event.type == pygame.JOYBUTTONUP:
+            self.message = "Button " + str( event.button ) + " id " + str(event.instance_id)
             if event.button == 9:
                 self.start = event.instance_id
 
