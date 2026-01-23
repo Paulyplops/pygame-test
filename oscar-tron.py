@@ -377,7 +377,7 @@ class Level():
         border = 20
         self.boundary = Boundary( [ [ 50 + border, border], [ 50 + border, height - border ], [ width - border, height - border ], [width - border, border], [ 50 + border, border] ] )
 
-        self.lookup = { joystick[x].get_instance_id() : self.players[x]  for x in range(len(joysticks)) }
+        self.lookup = { joysticks[x].get_instance_id() : self.players[x]  for x in range(len(joysticks)) }
 
         for x in range(pygame.joystick.get_count()):
             self.players[x].joystick = joysticks[x]
