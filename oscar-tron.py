@@ -22,7 +22,8 @@ TIME_BONUS = 10
 ROLL_ON_TIME = 3000
 POWER_UP_SIZE = 30
 POWER_UP_MARGIN = 30
-POWER_UP_TIMER = 500
+POWER_UP_SPAWN = 5000
+POWER_UP_TIME = 15000
 COIN_SCORE = 100
 
 pygame.init()
@@ -62,6 +63,7 @@ class Keys(enum.IntEnum):
     UP = 1
     LEFT = 2
     RIGHT = 3
+    ACTIVATE = 4
 
 # function to check if point q lies on line segment 'pr'
 def on_segment(p, q, r):
@@ -138,18 +140,32 @@ def contains( path, other ):
             return False
     return True
 
+assert contains( [[10,10],[20,10],[20,20],[20,10],[10,10]],[[0,0],[30,0],[30,30],[0,30],[0,0]] ) == True
+assert contains( [[10,10],[20,10],[20,20],[20,10],[10,10]],[[0,0],[15,0],[15,15],[0,15],[0,0]] ) == False
 
+def overlaps( path, other ):
+    for point in path:
+        if inside( point, other ):
+            return True
+    return False
 
-def check( player, opponent, check_all = False ):
+assert overlaps( [[10,10],[20,10],[20,20],[20,10],[10,10]],[[0,0],[30,0],[30,30],[0,30],[0,0]] ) == True
+assert overlaps( [[10,10],[20,10],[20,20],[20,10],[10,10]],[[0,0],[15,0],[15,15],[0,15],[0,0]] ) == True
+assert overlaps( [[10,10],[20,10],[20,20],[20,10],[10,10]],[[30,0],[50,0],[50,30],[30,30],[30,0]] ) == False
+
+def check_crash( player, opponent ):
     # Crash with someone else.
     if opponent != player and collision( (player.pos, player.path[-1]), opponent.path ):
         return True
     # Crash with yourself.
     elif collision( (player.pos, player.path[-1]), opponent.path[:-2] ):
         return True
-    elif check_all:
-        for previous, current in zip( player.path, player.path[1:]):
+
+def check( player, opponent ):
+    for previous, current in zip( player.path, player.path[1:]):
+        if collision( (previous, current), opponent.path ):
             return True
+
 
 def jitter():
     return ( random.random() - 0.5 ) * 2;
@@ -180,6 +196,8 @@ class Player:
         self.time_of_death = 0
         self.score = 0
         self.bonus = 0
+        self.powerup = None
+        self.boost = 1
 
 
 class Powerup:
@@ -199,11 +217,35 @@ class Powerup:
                pos[1] < self.y + POWER_UP_SIZE // 2 )
         
 
+    def update( self, delta_time ):
+        return False
+
+    def activate(self, active):
+        pass
 
 class Boost(Powerup):
     def __init__( self, x, y ):
         Powerup.__init__( self, x, y )
         self.icon = pygame.image.load("boost.bmp")
+        self.player = None
+        self.boost = 2
+
+    def trigger( self, player, level ):
+        player.powerup = self
+        self.active_time = POWER_UP_TIME
+        self.player = player
+
+    def update( self, delta_time ):
+        self.active_time -= delta_time
+        if self.active_time < 0:
+            self.player.boost = 1
+            self.player.powerup = None
+
+    def activate(self, active):
+        if active:
+            self.player.boost = self.boost
+        else:
+            self.player.boost = 1
 
 class Coin(Powerup):
     def __init__( self, x, y ):
@@ -213,15 +255,20 @@ class Coin(Powerup):
     def trigger( self, player, level ):
         player.score += COIN_SCORE
 
-class Brakes(Powerup):
+class Brakes(Boost):
     def __init__( self, x, y ):
-        Powerup.__init__( self, x, y )
+        Boost.__init__( self, x, y )
         self.icon = pygame.image.load("brakes.bmp")
+        self.boost = 0.5
 
 class Clear(Powerup):
     def __init__( self, x, y ):
         Powerup.__init__( self, x, y )
         self.icon = pygame.image.load("clear.bmp")
+
+    def trigger( self, player, level ):
+        for player in level.players:
+            player.path = player.path[-2:]
 
 class HiscoreScreen():
 
@@ -384,8 +431,8 @@ class ScoreScreen():
                 if event.key == player.keys[ Keys.DOWN ]:
                     self.columns[p] = max( self.columns[p] - 1, 0 )
         if event.type == pygame.JOYBUTTONDOWN:
-            self.message = "Button: " + event.button
-            if event.button == 0:
+            self.message = "Button: " + str(event.button)
+            if event.button == 1:
                 if self.columns[0] == 3 and self.columns[1] == 3:
                     self.finished = True
         if event.type == pygame.JOYAXISMOTION:
@@ -440,8 +487,8 @@ class Level():
         self.particles = []
 
         self.players = [
-                    Player( [pygame.K_a,pygame.K_d,pygame.K_w,pygame.K_s], [width*0.2, height*0.5], [self.speed,0], (230,20,20), "RED" ),
-                    Player( [pygame.K_LEFT, pygame.K_RIGHT, pygame.K_UP, pygame.K_DOWN ], [width*0.8,height*0.5], [-self.speed,0], (20,20,230), "BLUE" )
+                    Player( [pygame.K_a,pygame.K_d,pygame.K_w,pygame.K_s,pygame.K_c], [width*0.2, height*0.5], [self.speed,0], (230,20,20), "RED" ),
+                    Player( [pygame.K_LEFT, pygame.K_RIGHT, pygame.K_UP, pygame.K_DOWN, pygame.K_SPACE ], [width*0.8,height*0.5], [-self.speed,0], (20,20,230), "BLUE" )
             ]
 
         border = 20
@@ -457,7 +504,7 @@ class Level():
             self.players[x].joystick = joysticks[x]
 
         self.powerups = []
-        self.powerup_timer = POWER_UP_TIMER
+        self.powerup_timer = POWER_UP_SPAWN
 
     def draw(self, width, height, surface):
         pygame.draw.lines( surface, [255,255,0], False, self.boundary.path, LINE_WIDTH)
@@ -465,7 +512,10 @@ class Level():
         for player in self.players:
             if not player.time_of_death:
                 pygame.draw.lines( surface, player.col, False, player.path, LINE_WIDTH)
-                pygame.draw.rect( surface, player.col, pygame.Rect( player.pos[0]-2, player.pos[1]-2, 5, 5) )
+                col = player.col
+                if player.powerup and ( player.powerup.active_time > 3000 or player.powerup.active_time // 300 % 2 ):
+                    col = pygame.Color(255,255,255)
+                pygame.draw.rect( surface, col, pygame.Rect( player.pos[0]-2, player.pos[1]-2, 5, 5) )
             else:
                 col = player.col
                 col.a = round( 255 * ( 1.0 - min(self.time - player.time_of_death, MS_DECAY) / MS_DECAY ) )
@@ -498,15 +548,19 @@ class Level():
                 else:
                     time_of_death = player.time_of_death
                 continue
+
+            if player.powerup:
+                player.powerup.update( delta_time )
+
             player.pos = ( 
-                player.pos[0] + player.vel[0] * delta_time / 1000, 
-                player.pos[1] + player.vel[1] * delta_time / 1000)
+                player.pos[0] + player.vel[0] * player.boost * delta_time / 1000, 
+                player.pos[1] + player.vel[1] * player.boost * delta_time / 1000)
         
-            if check( player, self.boundary ):
+            if check_crash( player, self.boundary ):
                 self.crash(player)
 
             for opponent in self.players:
-                if check( player, opponent ):
+                if check_crash( player, opponent ):
                     self.crash(player)
 
             player.path[-1] = player.pos
@@ -522,8 +576,6 @@ class Level():
 
         self.powerup_timer -= delta_time
         if self.powerup_timer <= 0:
-            x = 0
-            y = 0
             while True:
                 x = int( random.random() * width )
                 y = int( random.random() * height )
@@ -534,18 +586,18 @@ class Level():
                              [x - POWER_UP_MARGIN, y + POWER_UP_MARGIN],
                              [x - POWER_UP_MARGIN, y - POWER_UP_MARGIN]])
                
-                
+                suitable = True 
                 if not contains( hit_box.path, self.boundary.path ):
                     print("Boundary")
-                    continue
+                    suitable = False
                 
-                if not check( self.players[0], hit_box, True ):
+                if check( self.players[0], hit_box ):
                     print("Player 1")
-                    continue
+                    suitable = False
 
-                if not check( self.players[1], hit_box, True ):
+                if check( self.players[1], hit_box ):
                     print("Player 2")
-                    continue
+                    suitable = False
                 
                 for powerup in self.powerups:
                     other_box = Boundary(
@@ -554,20 +606,33 @@ class Level():
                              [powerup.x + POWER_UP_MARGIN, powerup.y + POWER_UP_MARGIN],
                              [powerup.x - POWER_UP_MARGIN, powerup.y + POWER_UP_MARGIN],
                              [powerup.x - POWER_UP_MARGIN, powerup.y - POWER_UP_MARGIN]])
-                    if contains( other_box.path, hit_box.path ):
+                    if overlaps( other_box.path, hit_box.path ):
                         print("Powerup")
-                        continue
+                        suitable = False
 
-                break
+                if suitable:
+                    break
 
-            self.powerups.append( Coin( x, y ) )
-            self.powerup_timer += POWER_UP_TIMER
+            a = random.randint(0,9)
+            if a < 3:
+                self.powerups.append( Coin( x, y ) )
+            elif a < 5:
+                self.powerups.append( Boost( x, y ) )
+            elif a < 7:
+                self.powerups.append( Brakes( x, y ) )
+            else:
+                self.powerups.append( Clear( x, y ) )
+
+            self.powerup_timer += POWER_UP_SPAWN
+            
+            if len(self.powerups) > 5:
+                self.powerup_timer += POWER_UP_SPAWN * 2
            
         for player in self.players:
-            for powerup in self.powerups:
-                if not powerup.active_time and powerup.hit_test( player.pos ):
+            for powerup in list(self.powerups):
+                if powerup.hit_test( player.pos ):
                     powerup.trigger( player, self )
-                    powerup.active_time = self.time
+                    self.powerups.remove( powerup )
 
             
 
@@ -615,11 +680,28 @@ class Level():
                     vel = [+self.speed, 0]
                 if event.key == player.keys[ Keys.LEFT ] and player.vel[1] != 0:
                     vel = [-self.speed, 0]
+                if event.key == player.keys[ Keys.ACTIVATE ] and player.powerup:
+                    player.powerup.activate(True)
                 if vel:
                     player.vel = vel
                     player.path.append( player.pos )
+        if event.type == pygame.KEYUP:
+            for player in self.players:
+                if player.time_of_death:
+                    continue
+                if event.key == player.keys[ Keys.ACTIVATE ] and player.powerup:
+                    player.powerup.activate(False)
+                
         if event.type == pygame.JOYBUTTONDOWN:
             player = self.lookup[ event.instance_id ]
+            if event.button == 1 and player.powerup:
+                    player.powerup.activate(True)
+
+        if event.type == pygame.JOYBUTTONUP:
+            player = self.lookup[ event.instance_id ]
+            if event.button == 1 and player.powerup:
+                    player.powerup.activate(False)
+
         if event.type == pygame.JOYAXISMOTION:
             vel = None
             player = self.lookup[ event.instance_id ]
