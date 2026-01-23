@@ -529,14 +529,14 @@ class Level():
                 y = int( random.random() * height )
                 hit_box = Boundary(
                             [[x - POWER_UP_MARGIN, y - POWER_UP_MARGIN],
-                             [x - POWER_UP_MARGIN, y + POWER_UP_MARGIN],
-                             [x + POWER_UP_MARGIN, y + POWER_UP_MARGIN],
                              [x + POWER_UP_MARGIN, y - POWER_UP_MARGIN],
+                             [x + POWER_UP_MARGIN, y + POWER_UP_MARGIN],
+                             [x - POWER_UP_MARGIN, y + POWER_UP_MARGIN],
                              [x - POWER_UP_MARGIN, y - POWER_UP_MARGIN]])
                
                 
                 if not contains( hit_box.path, self.boundary.path ):
-                    print("Box")
+                    print("Boundary")
                     continue
                 
                 if not check( self.players[0], hit_box, True ):
@@ -547,6 +547,17 @@ class Level():
                     print("Player 2")
                     continue
                 
+                for powerup in self.powerups:
+                    other_box = Boundary(
+                            [[powerup.x - POWER_UP_MARGIN, powerup.y - POWER_UP_MARGIN],
+                             [powerup.x + POWER_UP_MARGIN, powerup.y - POWER_UP_MARGIN],
+                             [powerup.x + POWER_UP_MARGIN, powerup.y + POWER_UP_MARGIN],
+                             [powerup.x - POWER_UP_MARGIN, powerup.y + POWER_UP_MARGIN],
+                             [powerup.x - POWER_UP_MARGIN, powerup.y - POWER_UP_MARGIN]])
+                    if contains( other_box.path, hit_box.path ):
+                        print("Powerup")
+                        continue
+
                 break
 
             self.powerups.append( Coin( x, y ) )
@@ -554,7 +565,7 @@ class Level():
            
         for player in self.players:
             for powerup in self.powerups:
-                if powerup.hit_test( player.pos ):
+                if not powerup.active_time and powerup.hit_test( player.pos ):
                     powerup.trigger( player, self )
                     powerup.active_time = self.time
 
