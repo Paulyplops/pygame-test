@@ -27,7 +27,7 @@ pygame.mouse.set_visible(False)
 
 pygame.joystick.init()
 
-joysticks = [ [pygame.joystick.Joystick(x) for x in range(pygame.joystick.get_count())]
+joysticks = [pygame.joystick.Joystick(x) for x in range(pygame.joystick.get_count()) ]
 
 font = pygame.image.load("reduction-rotated.bmp")
 
