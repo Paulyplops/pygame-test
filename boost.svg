@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="30"
+   height="30"
+   viewBox="0 0 7.9374998 7.9375"
+   version="1.1"
+   id="svg1"
+   inkscape:export-filename="coin.png"
+   inkscape:export-xdpi="99.19854"
+   inkscape:export-ydpi="99.19854"
+   inkscape:version="1.3.1 (91b66b0, 2023-11-16)"
+   sodipodi:docname="boost.svg"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview1"
+     pagecolor="#000000"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:document-units="mm"
+     inkscape:export-bgcolor="#000000ff"
+     inkscape:zoom="6.0079847"
+     inkscape:cx="7.3235872"
+     inkscape:cy="20.972091"
+     inkscape:window-width="1456"
+     inkscape:window-height="1015"
+     inkscape:window-x="377"
+     inkscape:window-y="152"
+     inkscape:window-maximized="0"
+     inkscape:current-layer="layer1" />
+  <defs
+     id="defs1" />
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1">
+    <rect
+       style="fill:none;stroke:#ffffff;stroke-width:0.395;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:none"
+       id="rect1"
+       width="7.4865646"
+       height="7.4425259"
+       x="0.26423171"
+       y="0.17615446"
+       ry="1.9817377" />
+    <path
+       style="fill:none;stroke:#e91a1a;stroke-width:0.865;stroke-linecap:butt;stroke-linejoin:miter;stroke-dasharray:none;stroke-opacity:1"
+       d="M 3.3960029,6.0077239 1.7225356,3.937909 3.2638871,1.7800168"
+       id="path2" />
+    <path
+       style="fill:none;stroke:#e91a1a;stroke-width:0.865;stroke-linecap:butt;stroke-linejoin:miter;stroke-dasharray:none;stroke-opacity:1"
+       d="M 5.8287642,5.9785154 4.1552969,3.9087005 5.6966484,1.7508083"
+       id="path2-8" />
+  </g>
+</svg>
