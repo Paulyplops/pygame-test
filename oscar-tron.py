@@ -170,10 +170,11 @@ class HiscoreScreen():
 
     def draw(self, width, height, surface):
         surface.blit( logo, ( 50, height // 2 - logo.get_height() // 2 ) )
-        for i, x in enumerate( self.scores ):
-            x = 100 + ( FONT_SIZE + MARGIN ) * i,
-            write( x, height * 2 // 3, x[0] )
-            write( x, height // 3, str( x[1] ) )
+        write( surface, 200, height // 2, "Hi Scores", True )
+        for i, score in enumerate( self.scores ):
+            x = 300 + ( FONT_SIZE + MARGIN ) * i
+            write( surface, x, height * 2 // 3 + FONT_SIZE * 2 // 3, score[0] )
+            write( surface, x, height // 3, str( score[1] ) )
 
 
     def update( self, delta_time, width, height ):
