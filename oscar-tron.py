@@ -320,13 +320,13 @@ class ScoreScreen():
                 if event.key == player.keys[ Keys.DOWN ]:
                     self.columns[p] = max( self.columns[p] - 1, 0 )
         if event.type == pygame.JOYBUTTONDOWN:
-                if event.button == 0:
-                    if self.columns[0] == 3 and self.columns[1] == 3:
-                        self.save()
+            self.message = "Button: " + event.button ) )
+            if event.button == 0:
+                if self.columns[0] == 3 and self.columns[1] == 3:
+                    self.finished = True
         if event.type == pygame.JOYAXISMOTION:
             p = event.instance_id
             player = self.players[p]
-            self.message = "0: " + str(player.joystick.get_axis(0) ) + " 1: " + str(player.joystick.get_axis(1) )
             if player.joystick.get_axis(0) < -DEADZONE and abs( player.joystick.get_axis(1) ) < DEADZONE:
                 self.shift[p] = -1
             if player.joystick.get_axis(0) > DEADZONE and abs( player.joystick.get_axis(1) ) < DEADZONE:
