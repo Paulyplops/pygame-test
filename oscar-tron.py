@@ -216,6 +216,8 @@ class ScoreScreen():
 
         self.finished = False
 
+        self.message = ""
+
 
     def draw(self, width, height, surface):
 
@@ -265,6 +267,8 @@ class ScoreScreen():
                           [ 500 - m, height * 3 // 4 - f] ] , LINE_WIDTH)
 
         pygame.draw.line( surface, [255,255,0], [ MARGIN * 2 + FONT_SIZE, height // 2 ], [ width - MARGIN, height // 2 ], LINE_WIDTH)
+
+        write( surface, width - 100, height // 2, self.message, True )
 
     def update( self, delta_time, width, height):
         delta = delta_time
@@ -322,6 +326,7 @@ class ScoreScreen():
         if event.type == pygame.JOYAXISMOTION:
             p = event.instance_id
             player = self.players[p]
+            self.message = "0: " + str(player.joystick.get_axis(0) ) + " 1: " + str(player.joystick.get_axis(1) )
             if player.joystick.get_axis(0) < -DEADZONE and abs( player.joystick.get_axis(1) ) < DEADZONE:
                 self.shift[p] = -1
             if player.joystick.get_axis(0) > DEADZONE and abs( player.joystick.get_axis(1) ) < DEADZONE:
@@ -333,6 +338,7 @@ class ScoreScreen():
                     self.wheel_vels[p] = -800
             if abs(player.joystick.get_axis(0) ) < DEADZONE and abs( player.joystick.get_axis(1) ) < DEADZONE and self.shift[p] != 0:
                 self.columns[p] = max( min( self.columns[p] + self.shift[p], 3 ), 0 )
+                self.shift[p] = 0
 
     
     def save(self):
