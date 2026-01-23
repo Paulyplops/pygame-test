@@ -20,6 +20,9 @@ MARGIN = 10
 WINNER_BONUS = 500
 TIME_BONUS = 10
 ROLL_ON_TIME = 3000
+POWER_UP_SIZE = 30
+POWER_UP_MARGIN = 30
+POWER_UP_TIMER = 500
 
 pygame.init()
 
@@ -121,12 +124,31 @@ def collision( seg, path ):
     return False
 
 
-def check( player, opponent ):
+def inside_point( point, path ):
+    for previous, current in zip( path, path[1:]):
+        if orientation( previous, current, point ) != 0:
+            return False
+    return True
+
+
+def inside( path, other ):
+    for point in path:
+        if inside_point( point, other ) != 0:
+            return False
+    return True
+
+
+def check( player, opponent, check_all = False ):
+    if opponent == player: 
+        return False
     for previous, current in zip( opponent.path, opponent.path[1:]):
-        if opponent != player and collision( (player.pos, player.path[-1]), opponent.path ):
+        if collision( (player.pos, player.path[-1]), opponent.path ):
             return True
         elif collision( (player.pos, player.path[-1]), opponent.path[:-2] ):
             return True
+        elif check_all:
+            for previous, current in zip( player.path, player.path[1:]):
+                return True
 
 def jitter():
     return ( random.random() - 0.5 ) * 2;
@@ -158,6 +180,36 @@ class Player:
         self.score = 0
         self.bonus = 0
 
+
+class Powerup:
+    def __init__( self, x, y ):
+        self.x = x
+        self.y = y
+        self.icon = None
+        self.active = False
+
+    def draw(self, surface, width, height):
+        surface.blit( self.icon, ( self.x - POWER_UP_SIZE // 2, self.y - POWER_UP_SIZE // 2 ) )
+
+class Boost(Powerup):
+    def __init__( self, x, y ):
+        Powerup.__init__( self, x, y )
+        self.icon = pygame.image.load("boost.bmp")
+
+class Coin(Powerup):
+    def __init__( self, x, y ):
+        Powerup.__init__( self, x, y )
+        self.icon = pygame.image.load("coin.bmp")
+
+class Brakes(Powerup):
+    def __init__( self, x, y ):
+        Powerup.__init__( self, x, y )
+        self.icon = pygame.image.load("brakes.bmp")
+
+class Clear(Powerup):
+    def __init__( self, x, y ):
+        Powerup.__init__( self, x, y )
+        self.icon = pygame.image.load("clear.bmp")
 
 class HiscoreScreen():
 
@@ -320,7 +372,7 @@ class ScoreScreen():
                 if event.key == player.keys[ Keys.DOWN ]:
                     self.columns[p] = max( self.columns[p] - 1, 0 )
         if event.type == pygame.JOYBUTTONDOWN:
-            self.message = "Button: " + event.button ) )
+            self.message = "Button: " + event.button
             if event.button == 0:
                 if self.columns[0] == 3 and self.columns[1] == 3:
                     self.finished = True
@@ -388,6 +440,9 @@ class Level():
         for x in range(pygame.joystick.get_count()):
             self.players[x].joystick = joysticks[x]
 
+        self.powerups = []
+        self.powerup_timer = POWER_UP_TIMER
+
     def draw(self, width, height, surface):
         pygame.draw.lines( surface, [255,255,0], False, self.boundary.path, LINE_WIDTH)
 
@@ -408,6 +463,9 @@ class Level():
             col = particle.col + pygame.Color( r, g, b )  
             col.a = round( 255 * particle.heat )
             surface.set_at( (round(particle.pos[0]),round(particle.pos[1]) ), col )
+
+        for powerup in self.powerups:
+            powerup.draw( surface, width, height )
 
         write( surface, MARGIN, height - MARGIN, str(int(self.players[0].score) ) )
         write( surface, MARGIN, height // 2 - MARGIN, str(int(self.players[1].score) ) )
@@ -444,6 +502,37 @@ class Level():
                 particle.vel[0] * 0.99, 
                 particle.vel[1] * 0.99)
             particle.heat *= math.pow( math.e, - delta_time / 1000.0 )
+
+        self.powerup_timer -= delta_time
+        if self.powerup_timer <= 0:
+            ok = False
+            x = 0
+            y = 0
+            while not ok:
+                x = int( random.random() * width )
+                y = int( random.random() * height )
+                x = 20
+                y = 20
+                hit_box = Boundary(
+                            [[x - POWER_UP_MARGIN, y - POWER_UP_MARGIN],
+                             [x - POWER_UP_MARGIN, y + POWER_UP_MARGIN],
+                             [x + POWER_UP_MARGIN, y + POWER_UP_MARGIN],
+                             [x + POWER_UP_MARGIN, y - POWER_UP_MARGIN],
+                             [x - POWER_UP_MARGIN, y - POWER_UP_MARGIN]])
+
+                ok = True
+                
+                for player in self.players:
+                    if check( player, hit_box, True ):
+                        ok = False
+
+                ok = True
+
+            self.powerups.append( Coin( x, y ) )
+            self.powerup_timer += POWER_UP_TIMER
+                
+
+
 
         if time_of_death and self.time - time_of_death > ROLL_ON_TIME:
             for player in self.players:
