@@ -27,6 +27,8 @@ pygame.mouse.set_visible(False)
 
 pygame.joystick.init()
 
+joysticks = [ game.joystick.Joystick(x) for x in range(pygame.joystick.get_count())]
+
 font = pygame.image.load("reduction-rotated.bmp")
 
 logo = pygame.image.load("oscar-tron-rotated.bmp")
@@ -375,10 +377,10 @@ class Level():
         border = 20
         self.boundary = Boundary( [ [ 50 + border, border], [ 50 + border, height - border ], [ width - border, height - border ], [width - border, border], [ 50 + border, border] ] )
 
-        self.lookup = { pygame.joystick.Joystick(x).get_instance_id() : self.players[x]  for x in range(pygame.joystick.get_count()) }
+        self.lookup = { joystick[x].get_instance_id() : self.players[x]  for x in range(len(joysticks)) }
 
         for x in range(pygame.joystick.get_count()):
-            self.players[x].joystick = pygame.joystick.Joystick(x)
+            self.players[x].joystick = joysticks[x]
 
     def draw(self, width, height, surface):
         pygame.draw.lines( surface, [255,255,0], False, self.boundary.path, LINE_WIDTH)
