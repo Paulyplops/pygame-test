@@ -187,7 +187,7 @@ class Powerup:
         self.x = x
         self.y = y
         self.icon = None
-        self.active = None
+        self.active_time = None
 
     def draw(self, surface, width, height):
         surface.blit( self.icon, ( self.x - POWER_UP_SIZE // 2, self.y - POWER_UP_SIZE // 2 ) )
